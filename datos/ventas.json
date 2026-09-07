@@ -1,7 +1,23 @@
 [
     {
-        "usuario_id": "u001",
-        "producto_codigo": "p001",
-        "cantidad": 3
+        "id_venta": "VEN001",
+        "id_usuario": "1712345678",
+        "codigo_producto": "PRD001",
+        "cantidad": 2,
+        "total": 17.00
+    },
+    {
+        "id_venta": "VEN002",
+        "id_usuario": "1712345678",
+        "codigo_producto": "PRD004",
+        "cantidad": 2,
+        "total": 3.50
+    },
+    {
+        "id_venta": "VEN003",
+        "id_usuario": "1755554433",
+        "codigo_producto": "PRD002",
+        "cantidad": 1,
+        "total": 14.00
     }
 ]

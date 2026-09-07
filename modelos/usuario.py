@@ -1,26 +1,16 @@
 class Usuario:
-    def __init__(self, identificacion: str, nombre: str, correo: str):
-        if not identificacion or not nombre or not correo:
-            raise ValueError("Todos los campos del usuario son obligatorios.")
+    def __init__(self, identificacion: str, nombre: str, email: str):
+        self.identificacion = identificacion
+        self.nombre = nombre
+        self.email = email
 
-        self.identificacion: str = identificacion
-        self.nombre: str = nombre
-        self.correo: str = correo
-
-    def a_diccionario(self) -> dict:
+    def a_dict(self) -> dict:
         return {
             "identificacion": self.identificacion,
             "nombre": self.nombre,
-            "correo": self.correo
+            "email": self.email
         }
 
     @staticmethod
-    def desde_diccionario(datos: dict) -> 'Usuario':
-        try:
-            return Usuario(
-                identificacion=str(datos["identificacion"]),
-                nombre=str(datos["nombre"]),
-                correo=str(datos["correo"])
-            )
-        except KeyError as e:
-            raise KeyError(f"Falta la clave requerida en el JSON de Usuario: {e}")
+    def desde_dict(datos: dict) -> "Usuario":
+        return Usuario(datos["identificacion"], datos["nombre"], datos["email"])

@@ -1,103 +1,121 @@
-from typing import List, Optional
+# -*- coding: utf-8 -*-
+"""
+Proyecto: restaurante_app (Semana 12 - Optimización de Rendimiento)
+Autor: Damian Ortega
+Asignatura: Programación Orientada a Objetos
+"""
+
 from modelos.producto import Producto
 from modelos.usuario import Usuario
 from modelos.venta import Venta
 from servicios.archivo_servicio import ArchivoServicio
 
 class Restaurante:
-    RUTA_PRODUCTOS = "datos/productos.json"
-    RUTA_USUARIOS = "datos/usuarios.json"
-    RUTA_VENTAS = "datos/ventas.json"
+    def __init__(self, ruta_productos="datos/productos.json", 
+                 ruta_usuarios="datos/usuarios.json", 
+                 ruta_ventas="datos/ventas.json"):
+        self.autor = "Damian Ortega"
+        self.ruta_productos = ruta_productos
+        self.ruta_usuarios = ruta_usuarios
+        self.ruta_ventas = ruta_ventas
 
-    def __init__(self):
-        self._productos: List[Producto] = ArchivoServicio.cargar_productos(self.RUTA_PRODUCTOS)
-        self._usuarios: List[Usuario] = ArchivoServicio.cargar_usuarios(self.RUTA_USUARIOS)
-        self._ventas: List[Venta] = ArchivoServicio.cargar_ventas(self.RUTA_VENTAS)
+        # Colecciones Principales (listas obligatorias)
+        self.productos: list[Producto] = []
+        self.usuarios: list[Usuario] = []
+        self.ventas: list[Venta] = []
 
-    # --- BÚSQUEDAS ---
-    def buscar_producto(self, codigo: str) -> Optional[Producto]:
-        for prod in self._productos:
-            if prod.codigo == codigo:
-                return prod
-        return None
+        # Estructuras Auxiliares / Índices en Memoria para Rendimiento
+        self._index_productos: dict[str, Producto] = {}
+        self._index_usuarios: dict[str, Usuario] = {}
+        self._index_ventas_usuario: dict[str, list[Venta]] = {}
+        self._codigos_registrados: set[str] = set()
 
-    def buscar_usuario(self, identificacion: str) -> Optional[Usuario]:
-        for usr in self._usuarios:
-            if usr.identificacion == identificacion:
-                return usr
-        return None
+        self.cargar_datos()
 
-    # --- REGISTROS ---
+    def _reconstruir_indices(self):
+        """Reconstruye los índices desde las listas principales tras leer JSON."""
+        self._index_productos = {p.codigo: p for p in self.productos}
+        self._index_usuarios = {u.identificacion: u for u in self.usuarios}
+        self._codigos_registrados = {p.codigo for p in self.productos}
+
+        self._index_ventas_usuario = {}
+        for v in self.ventas:
+            if v.id_usuario not in self._index_ventas_usuario:
+                self._index_ventas_usuario[v.id_usuario] = []
+            self._index_ventas_usuario[v.id_usuario].append(v)
+
+    def cargar_datos(self):
+        datos_p = ArchivoServicio.cargar_json(self.ruta_productos)
+        self.productos = [Producto.desde_dict(d) for d in datos_p]
+
+        datos_u = ArchivoServicio.cargar_json(self.ruta_usuarios)
+        self.usuarios = [Usuario.desde_dict(d) for d in datos_u]
+
+        datos_v = ArchivoServicio.cargar_json(self.ruta_ventas)
+        self.ventas = [Venta.desde_dict(d) for d in datos_v]
+
+        self._reconstruir_indices()
+
+    def guardar_datos(self):
+        ArchivoServicio.guardar_json(self.ruta_productos, [p.a_dict() for p in self.productos])
+        ArchivoServicio.guardar_json(self.ruta_usuarios, [u.a_dict() for u in self.usuarios])
+        ArchivoServicio.guardar_json(self.ruta_ventas, [v.a_dict() for v in self.ventas])
+
+    # --- CONSULTAS OPTIMIZADAS ---
+    def buscar_producto(self, codigo: str) -> Producto | None:
+        return self._index_productos.get(codigo)
+
+    def buscar_usuario(self, identificacion: str) -> Usuario | None:
+        return self._index_usuarios.get(identificacion)
+
+    def obtener_ventas_usuario(self, identificacion: str) -> list[Venta]:
+        return self._index_ventas_usuario.get(identificacion, [])
+
+    # --- OPERACIONES CON SINCRONIZACIÓN DE ÍNDICES ---
     def registrar_producto(self, codigo: str, nombre: str, precio: float, stock: int) -> bool:
-        if self.buscar_producto(codigo) is not None:
-            print("El producto con este código ya existe.")
+        if codigo in self._codigos_registrados:
             return False
-        nuevo_producto = Producto(codigo, nombre, precio, stock)
-        self._productos.append(nuevo_producto)
-        ArchivoServicio.guardar_datos(self.RUTA_PRODUCTOS, self._productos)
+        
+        nuevo_p = Producto(codigo, nombre, precio, stock)
+        self.productos.append(nuevo_p)
+        
+        self._index_productos[codigo] = nuevo_p
+        self._codigos_registrados.add(codigo)
+        self.guardar_datos()
         return True
 
-    def registrar_usuario(self, identificacion: str, nombre: str, correo: str) -> bool:
-        if self.buscar_usuario(identificacion) is not None:
-            print("El usuario con esta identificación ya existe.")
+    def registrar_usuario(self, identificacion: str, nombre: str, email: str) -> bool:
+        if identificacion in self._index_usuarios:
             return False
-        nuevo_usuario = Usuario(identificacion, nombre, correo)
-        self._usuarios.append(nuevo_usuario)
-        ArchivoServicio.guardar_datos(self.RUTA_USUARIOS, self._usuarios)
+        
+        nuevo_u = Usuario(identificacion, nombre, email)
+        self.usuarios.append(nuevo_u)
+        
+        self._index_usuarios[identificacion] = nuevo_u
+        self.guardar_datos()
         return True
 
-    # --- OPERACIÓN DE VENTA ---
-    def vender_producto(self, codigo_producto: str, identificacion_usuario: str, cantidad: int) -> bool:
-        usuario = self.buscar_usuario(identificacion_usuario)
+    def registrar_venta(self, id_venta: str, id_usuario: str, codigo_producto: str, cantidad: int) -> tuple[bool, str]:
+        usuario = self.buscar_usuario(id_usuario)
+        if not usuario:
+            return False, "Error: Usuario no registrado."
+
         producto = self.buscar_producto(codigo_producto)
-
-        if usuario is None:
-            print("Error: El usuario especificado no existe.")
-            return False
-
-        if producto is None:
-            print("Error: El producto especificado no existe.")
-            return False
-
-        if cantidad <= 0:
-            print("Error: La cantidad solicitada debe ser mayor a cero.")
-            return False
+        if not producto:
+            return False, "Error: Producto no registrado."
 
         if producto.stock < cantidad:
-            print(f"Error: Stock insuficiente. Stock disponible: {producto.stock}")
-            return False
+            return False, f"Error: Stock insuficiente. Stock actual: {producto.stock}"
 
-        # Registrar la venta y actualizar stock
-        venta = Venta(usuario.identificacion, producto.codigo, cantidad)
-        self._ventas.append(venta)
-        producto.vender(cantidad)
+        producto.stock -= cantidad
+        total = producto.precio * cantidad
 
-        # Persistir cambios
-        ArchivoServicio.guardar_datos(self.RUTA_VENTAS, self._ventas)
-        ArchivoServicio.guardar_datos(self.RUTA_PRODUCTOS, self._productos)
-        return True
+        nueva_venta = Venta(id_venta, id_usuario, codigo_producto, cantidad, total)
+        self.ventas.append(nueva_venta)
 
-    # --- CONSULTAS ---
-    def consultar_ventas_usuario(self, identificacion_usuario: str) -> List[dict]:
-        usuario = self.buscar_usuario(identificacion_usuario)
-        if not usuario:
-            print("Error: Usuario no encontrado.")
-            return []
+        if id_usuario not in self._index_ventas_usuario:
+            self._index_ventas_usuario[id_usuario] = []
+        self._index_ventas_usuario[id_usuario].append(nueva_venta)
 
-        ventas_usuario = []
-        for venta in self._ventas:
-            if venta.usuario_id == identificacion_usuario:
-                producto = self.buscar_producto(venta.producto_codigo)
-                nombre_prod = producto.nombre if producto else "Producto no disponible"
-                ventas_usuario.append({
-                    "producto_codigo": venta.producto_codigo,
-                    "producto_nombre": nombre_prod,
-                    "cantidad": venta.cantidad
-                })
-        return ventas_usuario
-
-    def obtener_productos(self) -> List[Producto]:
-        return self._productos
-
-    def obtener_usuarios(self) -> List[Usuario]:
-        return self._usuarios
+        self.guardar_datos()
+        return True, f"Venta {id_venta} registrada exitosamente. Total: ${total:.2f}"

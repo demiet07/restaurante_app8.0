@@ -1,8 +1,50 @@
 [
     {
-        "codigo": "p001",
-        "nombre": "Harburgesa triple",
-        "precio": 8.5,
-        "stock": 7
+        "codigo": "PRD001",
+        "nombre": "Hamburguesa Doble Queso",
+        "precio": 8.50,
+        "stock": 25
+    },
+    {
+        "codigo": "PRD002",
+        "nombre": "Pizza Pepperoni Familiar",
+        "precio": 14.00,
+        "stock": 15
+    },
+    {
+        "codigo": "PRD003",
+        "nombre": "Papas Fritas Medianas",
+        "precio": 3.00,
+        "stock": 50
+    },
+    {
+        "codigo": "PRD004",
+        "nombre": "Gaseosa 500ml",
+        "precio": 1.75,
+        "stock": 40
+    },
+    {
+        "codigo": "PRD005",
+        "nombre": "Lasaña de Carne",
+        "precio": 9.50,
+        "stock": 12
+    },
+    {
+        "codigo": "PRD006",
+        "nombre": "Ensalada César con Pollo",
+        "precio": 6.50,
+        "stock": 18
+    },
+    {
+        "codigo": "PRD007",
+        "nombre": "Jugo Natural de Naranja",
+        "precio": 2.50,
+        "stock": 30
+    },
+    {
+        "codigo": "PRD008",
+        "nombre": "Tiramisú de la Casa",
+        "precio": 4.00,
+        "stock": 10
     }
 ]

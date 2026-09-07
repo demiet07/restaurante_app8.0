@@ -1,7 +1,27 @@
 [
     {
-        "identificacion": "u001",
+        "identificacion": "1712345678",
         "nombre": "Carlos Mendoza",
-        "correo": "carlos@gmail.com"
+        "email": "carlos.mendoza@email.com"
+    },
+    {
+        "identificacion": "1787654321",
+        "nombre": "María Fernanda López",
+        "email": "maria.lopez@email.com"
+    },
+    {
+        "identificacion": "1755554433",
+        "nombre": "Damian Ortega",
+        "email": "damian.ortega@email.com"
+    },
+    {
+        "identificacion": "1799887766",
+        "nombre": "Andrea Benítez",
+        "email": "andrea.b@email.com"
+    },
+    {
+        "identificacion": "1733221100",
+        "nombre": "Juan Pablo Torres",
+        "email": "jptorres@email.com"
     }
 ]
