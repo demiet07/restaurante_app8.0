@@ -1,20 +1,15 @@
-# -*- coding: utf-8 -*-
 import json
 import os
 
 class ArchivoServicio:
-    @staticmethod
-    def guardar_json(ruta: str, datos: list):
-        os.makedirs(os.path.dirname(ruta), exist_ok=True)
-        with open(ruta, 'w', encoding='utf-8') as f:
-            json.dump(datos, f, ensure_ascii=False, indent=4)
+    """Encargado exclusivamente de la lectura de archivos locales en formato JSON."""
 
     @staticmethod
-    def cargar_json(ruta: str) -> list:
-        if not os.path.exists(ruta):
+    def leer_json(ruta_archivo: str) -> list:
+        if not os.path.exists(ruta_archivo):
             return []
         try:
-            with open(ruta, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except json.JSONDecodeError:
+            with open(ruta_archivo, 'r', encoding='utf-8') as archivo:
+                return json.load(archivo)
+        except (json.JSONDecodeError, IOError):
             return []

@@ -1,16 +1,11 @@
 class Usuario:
-    def __init__(self, identificacion: str, nombre: str, email: str):
-        self.identificacion = identificacion
+    """Representa a un usuario del sistema del restaurante."""
+
+    def __init__(self, username: str, password: str, nombre: str, rol: str):
+        self.username = username
+        self.password = password
         self.nombre = nombre
-        self.email = email
+        self.rol = rol
 
-    def a_dict(self) -> dict:
-        return {
-            "identificacion": self.identificacion,
-            "nombre": self.nombre,
-            "email": self.email
-        }
-
-    @staticmethod
-    def desde_dict(datos: dict) -> "Usuario":
-        return Usuario(datos["identificacion"], datos["nombre"], datos["email"])
+    def __str__(self) -> str:
+        return f"{self.nombre} ({self.username}) - Rol: {self.rol}"

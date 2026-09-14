@@ -1,18 +1,12 @@
 class Producto:
-    def __init__(self, codigo: str, nombre: str, precio: float, stock: int):
-        self.codigo = codigo
+    """Representa un producto o platillo disponible en el restaurante."""
+
+    def __init__(self, id: int, nombre: str, precio: float, stock: int, categoria: str):
+        self.id = id
         self.nombre = nombre
         self.precio = precio
         self.stock = stock
+        self.categoria = categoria
 
-    def a_dict(self) -> dict:
-        return {
-            "codigo": self.codigo,
-            "nombre": self.nombre,
-            "precio": self.precio,
-            "stock": self.stock
-        }
-
-    @staticmethod
-    def desde_dict(datos: dict) -> "Producto":
-        return Producto(datos["codigo"], datos["nombre"], datos["precio"], datos["stock"])
+    def __str__(self) -> str:
+        return f"{self.nombre} - ${self.precio:.2f} (Stock: {self.stock})"

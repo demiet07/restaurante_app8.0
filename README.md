@@ -1,124 +1,44 @@
-"""
-Proyecto: restaurante_app (Semana 12 - Optimización de Rendimiento)
-Autor: Damian Ortega
-Asignatura: Programación Orientada a Objetos
-"""
+# Restaurante App - Semana 13 (Interfaz Gráfica con Tkinter)
 
-from modelos.producto import Producto
-from modelos.usuario import Usuario
-from modelos.venta import Venta
-from servicios.archivo_servicio import ArchivoServicio
+Aplicación de gestión para un restaurante desarrollada en Python utilizando la biblioteca gráfica **Tkinter**, implementando una arquitectura modular basada en el proyecto docente de la Semana 13.
 
-class Restaurante:
-    def __init__(self, ruta_productos="datos/productos.json", 
-                 ruta_usuarios="datos/usuarios.json", 
-                 ruta_ventas="datos/ventas.json"):
-        self.autor = "Damian Ortega"
-        self.ruta_productos = ruta_productos
-        self.ruta_usuarios = ruta_usuarios
-        self.ruta_ventas = ruta_ventas
+## Propósito
+Esta versión marca la transición del proyecto desde la consola hacia una interfaz gráfica de usuario (GUI). Su objetivo principal es estructurar adecuadamente el software separando la lógica de negocio, las entidades, el acceso a archivos de datos locales y las vistas gráficas dentro de una única ventana de ejecución (`mainloop`).
 
-        # Colecciones Principales (listas obligatorias para persistencia y recorrido)
-        self.productos: list[Producto] = []
-        self.usuarios: list[Usuario] = []
-        self.ventas: list[Venta] = []
+## Estructura del Proyecto
+restaurante_app/
+├── datos/
+│   ├── productos.json      # Almacenamiento local de los productos del restaurante
+│   └── usuarios.json       # Almacenamiento local de los usuarios autorizados
+├── modelos/
+│   ├── __init__.py
+│   ├── producto.py         # Entidad Producto
+│   └── usuario.py          # Entidad Usuario
+├── servicios/
+│   ├── __init__.py
+│   ├── archivo_servicio.py   # Lógica de lectura de archivos JSON
+│   └── restaurante_servicio.py # Lógica de negocio, validación de acceso y consultas
+├── ui/
+│   ├── __init__.py
+│   ├── login_view.py       # Pantalla gráfica de inicio de sesión
+│   └── main_view.py        # Panel principal del sistema con pestañas/opciones
+├── main.py                 # Punto de entrada y controlador general de vistas
+└── README.md               # Documentación del proyecto
 
-        # Estructuras Auxiliares / Índices en Memoria para Rendimiento
-        self._index_productos: dict[str, Producto] = {}
-        self._index_usuarios: dict[str, Usuario] = {}
-        self._index_ventas_usuario: dict[str, list[Venta]] = {}
-        self._codigos_registrados: set[str] = set()
+## Flujo de la Aplicación
+1. **Inicio**: `main.py` inicializa la ventana principal de Tkinter y carga los servicios de datos.
+2. **Autenticación**: Se presenta `LoginView`. El usuario ingresa sus credenciales, las cuales son validadas por `RestauranteServicio`.
+3. **Panel Principal**: Tras un acceso correcto, se despliega `MainView` dentro de la misma ventana.
+4. **Consulta de Datos**: Permite alternar la visualización entre productos y usuarios registrados cargados desde los archivos JSON. Las opciones avanzadas (como Ventas) se identifican visualmente como pendientes.
+5. **Cierre de Sesión**: Permite retornar de manera segura a la pantalla de acceso sin cerrar la aplicación.
 
-        self.cargar_datos()
+## Requisitos
+- Python 3.x instalado.
+- Biblioteca estándar `tkinter` (incluida por defecto en la mayoría de las distribuciones de Python).
 
-    def _reconstruir_indices(self):
-        """Reconstruye todos los índices auxiliares desde las listas principales tras leer JSON."""
-        self._index_productos = {p.codigo: p for p in self.productos}
-        self._index_usuarios = {u.identificacion: u for u in self.usuarios}
-        self._codigos_registrados = {p.codigo for p in self.productos}
-
-        self._index_ventas_usuario = {}
-        for v in self.ventas:
-            if v.id_usuario not in self._index_ventas_usuario:
-                self._index_ventas_usuario[v.id_usuario] = []
-            self._index_ventas_usuario[v.id_usuario].append(v)
-
-    def cargar_datos(self):
-        datos_p = ArchivoServicio.cargar_json(self.ruta_productos)
-        self.productos = [Producto.desde_dict(d) for d in datos_p]
-
-        datos_u = ArchivoServicio.cargar_json(self.ruta_usuarios)
-        self.usuarios = [Usuario.desde_dict(d) for d in datos_u]
-
-        datos_v = ArchivoServicio.cargar_json(self.ruta_ventas)
-        self.ventas = [Venta.desde_dict(d) for d in datos_v]
-
-        self._reconstruir_indices()
-
-    def guardar_datos(self):
-        ArchivoServicio.guardar_json(self.ruta_productos, [p.a_dict() for p in self.productos])
-        ArchivoServicio.guardar_json(self.ruta_usuarios, [u.a_dict() for u in self.usuarios])
-        ArchivoServicio.guardar_json(self.ruta_ventas, [v.a_dict() for v in self.ventas])
-
-    # --- CONSULTAS OPTIMIZADAS O(1) ---
-    def buscar_producto(self, codigo: str) -> Producto | None:
-        return self._index_productos.get(codigo)
-
-    def buscar_usuario(self, identificacion: str) -> Usuario | None:
-        return self._index_usuarios.get(identificacion)
-
-    def obtener_ventas_usuario(self, identificacion: str) -> list[Venta]:
-        return self._index_ventas_usuario.get(identificacion, [])
-
-    # --- OPERACIONES CON MANTENIMIENTO DE SINCRO EN ÍNDICES ---
-    def registrar_producto(self, codigo: str, nombre: str, precio: float, stock: int) -> bool:
-        if codigo in self._codigos_registrados:  # Pertenencia directa O(1) con set
-            return False
-        
-        nuevo_p = Producto(codigo, nombre, precio, stock)
-        self.productos.append(nuevo_p)
-        
-        # Sincronizar colecciones auxiliares
-        self._index_productos[codigo] = nuevo_p
-        self._codigos_registrados.add(codigo)
-        self.guardar_datos()
-        return True
-
-    def registrar_usuario(self, identificacion: str, nombre: str, email: str) -> bool:
-        if identificacion in self._index_usuarios:  # Búsqueda O(1) con dict
-            return False
-        
-        nuevo_u = Usuario(identificacion, nombre, email)
-        self.usuarios.append(nuevo_u)
-        
-        # Sincronizar índice
-        self._index_usuarios[identificacion] = nuevo_u
-        self.guardar_datos()
-        return True
-
-    def registrar_venta(self, id_venta: str, id_usuario: str, codigo_producto: str, cantidad: int) -> tuple[bool, str]:
-        usuario = self.buscar_usuario(id_usuario)
-        if not usuario:
-            return False, "Error: Usuario no registrado."
-
-        producto = self.buscar_producto(codigo_producto)
-        if not producto:
-            return False, "Error: Producto no registrado."
-
-        if producto.stock < cantidad:
-            return False, f"Error: Stock insuficiente. Stock actual: {producto.stock}"
-
-        # Actualización de stock y registro
-        producto.stock -= cantidad
-        total = producto.precio * cantidad
-
-        nueva_venta = Venta(id_venta, id_usuario, codigo_producto, cantidad, total)
-        self.ventas.append(nueva_venta)
-
-        # Sincronización inmediata del índice agrupado por usuario
-        if id_usuario not in self._index_ventas_usuario:
-            self._index_ventas_usuario[id_usuario] = []
-        self._index_ventas_usuario[id_usuario].append(nueva_venta)
-
-        self.guardar_datos()
-        return True, f"Venta {id_venta} registrada exitosamente. Total a pagar: ${total:.2f}"
+## Instrucciones de Ejecución
+1. Clone este repositorio o descargue los archivos manteniendo la estructura de carpetas indicada.
+2. Abra una terminal en la carpeta raíz del proyecto (`restaurante_app/`).
+3. Ejecute el archivo principal mediante el comando:
+   ```bash
+   python main.py
