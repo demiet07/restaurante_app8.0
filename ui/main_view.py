@@ -1,79 +1,127 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 
-class MainView(tk.Frame):
-    """Panel principal del restaurante con pestañas para productos, usuarios y opciones pendientes."""
+class MainView(tk.Toplevel):
+    def __init__(self, root, servicio):
+        super().__init__(root)
+        self.root = root
+        self.servicio = servicio
+        
+        self.title("Restaurante App - Gestión Principal")
+        self.geometry("900x650")
+        
+        self.crear_interfaz()
+        self.actualizar_visor()
 
-    def __init__(self, parent, controlador, restaurante_servicio, usuario_actual):
-        super().__init__(parent, bg="#f0f0f0")
-        self.controlador = controlador
-        self.restaurante_servicio = restaurante_servicio
-        self.usuario_actual = usuario_actual
-        self.crear_widgets()
+    def crear_interfaz(self):
+        # 1. Contenedor de Navegación Superior
+        barra_nav = ttk.Frame(self, padding=10)
+        barra_nav.pack(side=tk.TOP, fill=tk.X)
+        
+        ttk.Button(barra_nav, text="Consultar Usuarios", command=self.ver_usuarios).pack(side=tk.LEFT, padx=5)
+        ttk.Button(barra_nav, text="Actualizar Vista", command=self.actualizar_visor).pack(side=tk.LEFT, padx=5)
 
-    def crear_widgets(self):
-        # Barra superior con bienvenida y botón de cerrar sesión
-        top_frame = tk.Frame(self, bg="#333333", padx=15, pady=10)
-        top_frame.pack(side="top", fill="x")
+        # 2. Contenedor Principal (Divide la pantalla en dos secciones)
+        contenedor_principal = ttk.Frame(self, padding=10)
+        contenedor_principal.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-        lbl_bienvenida = tk.Label(top_frame, text=f"Bienvenido: {self.usuario_actual.nombre} ({self.usuario_actual.rol})", font=("Arial", 11, "bold"), bg="#333333", fg="white")
-        lbl_bienvenida.pack(side="left")
+        # 3. Subcontenedor Izquierdo: Formulario y Acciones (LabelFrame)
+        frame_form = ttk.LabelFrame(contenedor_principal, text="Gestión de Productos", padding=15)
+        frame_form.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        btn_logout = tk.Button(top_frame, text="Cerrar Sesión", font=("Arial", 9), bg="#d9534f", fg="white", command=self.controlador.cerrar_sesion)
-        btn_logout.pack(side="right")
+        ttk.Label(frame_form, text="ID Producto:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.txt_id = ttk.Entry(frame_form)
+        self.txt_id.grid(row=0, column=1, sticky=tk.EW, pady=5)
 
-        # Contenedor de opciones con Listbox y vistas tabulares básicas
-        content_frame = tk.Frame(self, bg="#f0f0f0", padx=20, pady=20)
-        content_frame.pack(fill="both", expand=True)
+        ttk.Label(frame_form, text="Nombre:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.txt_nombre = ttk.Entry(frame_form)
+        self.txt_nombre.grid(row=1, column=1, sticky=tk.EW, pady=5)
 
-        # Panel izquierdo de navegación o selección de vistas
-        menu_frame = tk.Frame(content_frame, bg="#e0e0e0", padx=10, pady=10, width=200)
-        menu_frame.pack(side="left", fill="y", padx=(0, 20))
+        ttk.Label(frame_form, text="Precio:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.txt_precio = ttk.Entry(frame_form)
+        self.txt_precio.grid(row=2, column=1, sticky=tk.EW, pady=5)
 
-        tk.Label(menu_frame, text="Opciones", font=("Arial", 11, "bold"), bg="#e0e0e0").pack(pady=(0, 10))
+        ttk.Label(frame_form, text="Stock:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        self.txt_stock = ttk.Entry(frame_form)
+        self.txt_stock.grid(row=3, column=1, sticky=tk.EW, pady=5)
 
-        btn_ver_productos = tk.Button(menu_frame, text="Productos", font=("Arial", 10), width=18, command=self.mostrar_productos)
-        btn_ver_productos.pack(pady=5)
+        # Contenedor de Botones de Acción
+        frame_botones = ttk.Frame(frame_form, padding=5)
+        frame_botones.grid(row=4, column=0, columnspan=2, pady=15)
 
-        btn_ver_usuarios = tk.Button(menu_frame, text="Usuarios", font=("Arial", 10), width=18, command=self.mostrar_usuarios)
-        btn_ver_usuarios.pack(pady=5)
+        ttk.Button(frame_botones, text="Registrar", command=self.accion_registrar).pack(side=tk.LEFT, padx=3)
+        ttk.Button(frame_botones, text="Actualizar", command=self.accion_actualizar).pack(side=tk.LEFT, padx=3)
+        ttk.Button(frame_botones, text="Eliminar", command=self.accion_eliminar).pack(side=tk.LEFT, padx=3)
+        ttk.Button(frame_botones, text="Limpiar", command=self.limpiar_campos).pack(side=tk.LEFT, padx=3)
 
-        btn_ventas = tk.Button(menu_frame, text="Ventas (Pendiente)", font=("Arial", 10), width=18, state="disabled", fg="gray")
-        btn_ventas.pack(pady=5)
+        # 4. Subcontenedor Derecho: Visualización de Inventario (LabelFrame)
+        frame_visor = ttk.LabelFrame(contenedor_principal, text="Inventario Actual", padding=15)
+        frame_visor.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        # Panel derecho para mostrar el contenido dinámico
-        self.display_frame = tk.Frame(content_frame, bg="white", padx=15, pady=15, relief="solid", borderwidth=1)
-        self.display_frame.pack(side="right", fill="both", expand=True)
+        self.texto_visor = tk.Text(frame_visor, width=40, height=20, state=tk.DISABLED)
+        self.texto_visor.pack(fill=tk.BOTH, expand=True)
 
-        self.lbl_titulo_seccion = tk.Label(self.display_frame, text="Seleccione una opción del menú", font=("Arial", 13, "bold"), bg="white", fg="#333333")
-        self.lbl_titulo_seccion.pack(anchor="w", pady=(0, 10))
+    def actualizar_visor(self):
+        self.texto_visor.config(state=tk.NORMAL)
+        self.texto_visor.delete("1.0", tk.END)
+        
+        productos = self.servicio.obtener_productos()
+        if not productos:
+            self.texto_visor.insert(tk.END, "No hay productos registrados en el inventario.")
+        else:
+            for p in productos:
+                info = f"ID: {p.id_prod} | {p.nombre} | ${p.precio:.2f} | Stock: {p.stock}\n"
+                self.texto_visor.insert(tk.END, info)
+                
+        self.texto_visor.config(state=tk.DISABLED)
 
-        # Listbox con barra de desplazamiento para mostrar registros
-        list_container = tk.Frame(self.display_frame, bg="white")
-        list_container.pack(fill="both", expand=True)
+    def limpiar_campos(self):
+        self.txt_id.delete(0, tk.END)
+        self.txt_nombre.delete(0, tk.END)
+        self.txt_precio.delete(0, tk.END)
+        self.txt_stock.delete(0, tk.END)
 
-        self.scrollbar = tk.Scrollbar(list_container)
-        self.scrollbar.pack(side="right", fill="y")
+    def accion_registrar(self):
+        try:
+            self.servicio.registrar_producto(
+                self.txt_id.get(),
+                self.txt_nombre.get(),
+                self.txt_precio.get(),
+                self.txt_stock.get()
+            )
+            messagebox.showinfo("Éxito", "Producto registrado correctamente.")
+            self.actualizar_visor()
+            self.limpiar_campos()
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
 
-        self.listbox = tk.Listbox(list_container, font=("Consolas", 10), yscrollcommand=self.scrollbar.set, width=60, height=15)
-        self.listbox.pack(side="left", fill="both", expand=True)
-        self.scrollbar.config(command=self.listbox.yview)
+    def accion_actualizar(self):
+        try:
+            self.servicio.actualizar_producto(
+                self.txt_id.get(),
+                self.txt_nombre.get(),
+                self.txt_precio.get(),
+                self.txt_stock.get()
+            )
+            messagebox.showinfo("Éxito", "Producto actualizado correctamente.")
+            self.actualizar_visor()
+            self.limpiar_campos()
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
 
-        # Mostrar productos por defecto al iniciar la vista principal
-        self.mostrar_productos()
+    def accion_eliminar(self):
+        try:
+            id_prod = self.txt_id.get()
+            if not id_prod:
+                raise ValueError("Debe ingresar el ID del producto que desea eliminar.")
+            self.servicio.eliminar_producto(id_prod)
+            messagebox.showinfo("Éxito", "Producto eliminado correctamente.")
+            self.actualizar_visor()
+            self.limpiar_campos()
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
 
-    def mostrar_productos(self):
-        self.lbl_titulo_seccion.config(text="Productos Registrados en el Restaurante")
-        self.listbox.delete(0, tk.END)
-        productos = self.restaurante_servicio.obtener_productos()
-        for p in productos:
-            texto = f"ID: {p.id} | {p.nombre:<25} | Precio: ${p.precio:>6.2f} | Stock: {p.stock:>3} | Cat: {p.categoria}"
-            self.listbox.insert(tk.END, texto)
-
-    def mostrar_usuarios(self):
-        self.lbl_titulo_seccion.config(text="Usuarios Registrados en el Sistema")
-        self.listbox.delete(0, tk.END)
-        usuarios = self.restaurante_servicio.obtener_usuarios()
-        for u in usuarios:
-            texto = f"Usuario: {u.username:<12} | Nombre: {u.nombre:<20} | Rol: {u.rol}"
-            self.listbox.insert(tk.END, texto)
+    def ver_usuarios(self):
+        usuarios = self.servicio.obtener_usuarios()
+        listado = "\n".join([f"Usuario: {u.username} | Rol: {u.rol}" for u in usuarios])
+        messagebox.showinfo("Usuarios Registrados", listado if listado else "No hay usuarios.")

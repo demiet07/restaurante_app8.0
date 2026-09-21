@@ -2,14 +2,20 @@ import json
 import os
 
 class ArchivoServicio:
-    """Encargado exclusivamente de la lectura de archivos locales en formato JSON."""
-
     @staticmethod
-    def leer_json(ruta_archivo: str) -> list:
-        if not os.path.exists(ruta_archivo):
+    def leer_json(ruta):
+        if not os.path.exists(ruta):
             return []
         try:
-            with open(ruta_archivo, 'r', encoding='utf-8') as archivo:
+            with open(ruta, "r", encoding="utf-8") as archivo:
                 return json.load(archivo)
-        except (json.JSONDecodeError, IOError):
+        except Exception:
             return []
+
+    @staticmethod
+    def escribir_json(ruta, datos):
+        try:
+            with open(ruta, "w", encoding="utf-8") as archivo:
+                json.dump(datos, archivo, indent=4, ensure_ascii=False)
+        except Exception as e:
+            print(f"Error al escribir el archivo: {e}")

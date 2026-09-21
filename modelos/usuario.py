@@ -1,11 +1,17 @@
 class Usuario:
-    """Representa a un usuario del sistema del restaurante."""
-
-    def __init__(self, username: str, password: str, nombre: str, rol: str):
-        self.username = username
-        self.password = password
-        self.nombre = nombre
+    def __init__(self, id=None, id_usuario=None, username="", nombre="", rol="", password="", **kwargs):
+        self.id_usuario = id_usuario if id_usuario is not None else id
+        # Mapea automáticamente username o nombre para evitar conflictos
+        self.username = username if username else nombre
+        self.nombre = nombre if nombre else username
         self.rol = rol
+        self.password = password
 
-    def __str__(self) -> str:
-        return f"{self.nombre} ({self.username}) - Rol: {self.rol}"
+    def a_diccionario(self):
+        return {
+            "id_usuario": self.id_usuario,
+            "username": self.username,
+            "nombre": self.nombre,
+            "rol": self.rol,
+            "password": self.password
+        }

@@ -1,12 +1,16 @@
 class Producto:
-    """Representa un producto o platillo disponible en el restaurante."""
-
-    def __init__(self, id: int, nombre: str, precio: float, stock: int, categoria: str):
-        self.id = id
+    def __init__(self, id=None, id_prod=None, nombre="", precio=0.0, stock=0, categoria=None, **kwargs):
+        self.id_prod = id_prod if id_prod is not None else id
         self.nombre = nombre
-        self.precio = precio
-        self.stock = stock
+        self.precio = float(precio) if precio is not None else 0.0
+        self.stock = int(stock) if stock is not None else 0
         self.categoria = categoria
 
-    def __str__(self) -> str:
-        return f"{self.nombre} - ${self.precio:.2f} (Stock: {self.stock})"
+    def a_diccionario(self):
+        return {
+            "id_prod": self.id_prod,
+            "nombre": self.nombre,
+            "precio": self.precio,
+            "stock": self.stock,
+            "categoria": self.categoria
+        }
